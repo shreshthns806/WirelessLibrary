@@ -38,7 +38,7 @@ export default class TransactionScreen extends React.Component {
         if (buttonState == 'clicked' && hasCameraPermission){
             return(
                 <BarCodeScanner style = {StyleSheet.absoluteFillObject}
-                    onBarcodeScanned = {scanned?undefined:this.handleBarcodeScanned}
+                    onBarCodeScanned = {scanned?undefined:this.handleBarcodeScanned}
                 ></BarCodeScanner>
             )
         }

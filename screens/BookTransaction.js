@@ -1,6 +1,8 @@
 import React from 'react';
-import { Text, View, Image, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { Text, View, Image, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Alert } from 'react-native';
 import * as Permissions from 'expo-permissions';
+import * as firebase from 'firebase';
+import db from '../config';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 export default class TransactionScreen extends React.Component {
     
@@ -11,7 +13,8 @@ export default class TransactionScreen extends React.Component {
             scanned: false,
             scanBookID: '',
             scanStudentID:'',
-            buttonState: 'normal'
+            buttonState: 'normal',
+            transactionMessage: '',
         }
     }
     
@@ -24,6 +27,76 @@ export default class TransactionScreen extends React.Component {
         })
     }
 
+    handleTransaction = async ()=> {
+        var transactionMessage
+        db.collection("books").doc(this.state.scanBookID).get().then(
+            (doc)=> {
+                var book = doc.data();
+                if(book.bookAvailability){
+                    this.initiateBookIssue();
+                    transactiaaonMessage = 'Book Issued'
+                    Alert.alert(transactionMessage)
+                }
+                else {
+                    this.inititeBookReturn();
+                    transactionMessage = 'Book Returned'
+                    Alert.alert(transactionMessage)
+                }
+            }
+        )
+        this.setState({ transactionMessage: transactionMessage })
+    }
+
+    initiateBookIssue = async ()=>{
+        //add a transaction
+        db.collection("transactions").add({
+          'studentID' : this.state.scanStudentID,
+          'bookID' : this.state.scanBookID,
+          'data' : firebase.firestore.Timestamp.now().toDate(),
+          'transactionType' : "Issue"
+        })
+    
+        //change book status
+        db.collection("books").doc(this.state.scanBookID).update({
+          'bookAvailability' : false
+        })
+
+        //change number of issued books for student
+        db.collection("students").doc(this.state.scanStudentID).update({
+          'numberOfBooksIssued' : firebase.firestore.FieldValue.increment(1)
+        })
+    
+        this.setState({
+          scanStudentID : '',
+          scanBookID: ''
+        })
+      }
+    
+      initiateBookReturn = async ()=>{
+        //add a transaction
+        db.collection("transactions").add({
+          'studentID' : this.state.scanStudentID,
+          'bookID' : this.state.scanBookId,
+          'date'   : firebase.firestore.Timestamp.now().toDate(),
+          'transactionType' : "Return"
+        })
+    
+        //change book status
+        db.collection("books").doc(this.state.scanBookID).update({
+          'bookAvailability' : true
+        })
+    
+        //change book status
+        db.collection("students").doc(this.state.scanStudentID).update({
+          'numberOfBooksIssued' : firebase.firestore.FieldValue.increment(-1)
+        })
+    
+        this.setState({
+          scanStudentID : '',
+          scanBookID : ''
+        })
+      }
+
     handleBarcodeScanned = async ({type,data}) => {
         const buttonState = this.state.buttonState
         if(buttonState == 'BookID'){
@@ -32,7 +105,8 @@ export default class TransactionScreen extends React.Component {
                 scanBookID:data,
                 buttonState:'normal',
             })
-        }
+            }
+        
         else if(buttonState == 'BookID'){
             this.setState({
                 scanned:true,
@@ -52,11 +126,10 @@ export default class TransactionScreen extends React.Component {
                 <BarCodeScanner style = {StyleSheet.absoluteFillObject}
                     onBarCodeScanned = {scanned?undefined:this.handleBarcodeScanned}
                 ></BarCodeScanner>
-            )
-        }
+            )}
         else if(buttonState == 'normal') {
             return(
-                <View style = {styles.container}>
+                <KeyboardAvoidingView style = {styles.container} behaviour = "padding" enabled>
                     <View>
                         <Image source = {require('../assets/booklogo.jpg')}></Image>
                         <Text style = {{textAlign:'center', fontSize:28}}>Wireless Library</Text>
@@ -64,18 +137,32 @@ export default class TransactionScreen extends React.Component {
                     <View style = {styles.inputView}>
                         <TextInput 
                             style = {styles.inputBox}
-                            placeHolder = 'BookID'
+                            placeholder = 'BookID'
+                            onChangeText = {
+                                (text)=>{
+                                    this.setState({
+                                        scanBookID:text
+                                    })
+                                }
+                            }
                             value = {this.state.scanBookID}
-                        ></TextInput>
+                     ></TextInput>
                         <TouchableOpacity
                             style = {styles.scanButton1}
                             onPress = {()=>{this.getCameraPermission("BookID")}}
                         ><Text style = {styles.buttonText}>Scan</Text></TouchableOpacity>
                     </View>
                     <View style = {styles.inputView}>
-                        <TextInput 
+                        <TextInput
                             style = {styles.inputBox}
-                            placeHolder = 'StudentID'
+                            placeholder = 'StudentID'
+                            onChangeText = {
+                                (text)=>{
+                                    this.setState({
+                                        scanStudentID:text
+                                    })
+                                }
+                            }
                             value = {this.state.scanStudentID}
                         ></TextInput>
                         <TouchableOpacity
@@ -83,15 +170,11 @@ export default class TransactionScreen extends React.Component {
                             onPress = {()=>{this.getCameraPermission("StudentID")}}
                         ><Text style = {styles.buttonText}>Scan</Text></TouchableOpacity>
                     </View>
-                    <Text style = {styles.displayText}>
-                        {
-                            hasCameraPermission == true ? this.state.scanData:'Request Camera Permission'
-                        }
-                    </Text>
-                    <TouchableOpacity style = {styles.scanButton} onPress = {this.getCameraPermission}>
-                        <Text style = {styles.buttonText}>Scan QR Code</Text>
+                    <TouchableOpacity style = {styles.submitButton}
+                            onPress = {async ()=>{await this.handleTransaction()}}>
+                        <Text style = {styles.buttonText}>Submit</Text>
                     </TouchableOpacity>
-                </View>
+                </KeyboardAvoidingView>
             )
         }
     }
@@ -107,11 +190,13 @@ const styles = StyleSheet.create({
         fontSize:15,
         textDecorationLine:'underline',
     },
-    scanButton:{
+    submitButton:{
         backgroundColor:'greenyellow',
         margin:10,
         paddingRight:5,
-        paddingLeft:5
+        paddingLeft:5,
+        width:100,
+        height:50,
     },
     scanButton1:{
         backgroundColor:'greenyellow',

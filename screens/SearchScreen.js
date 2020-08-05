@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, FlatList} from 'react-native';
+import { Text, View, FlatList,StyleSheet} from 'react-native';
 import db from '../config';
 
 export default class SearchScreen extends React.Component {
@@ -14,7 +14,8 @@ export default class SearchScreen extends React.Component {
     }
 
     componentDidMount = async ()=> {
-        db.collection('transactions').get().docs.map(
+        const query = await db.collection("transactions").get()
+      query.docs.map(
             (item)=> {
                 this.setState({
                     allTransactions:[...this.state.allTransactions,item.data()]
@@ -29,28 +30,54 @@ export default class SearchScreen extends React.Component {
 
     render(){
         return(
-            <View style = {{flex:1, justifyContent:'center', alignItems:'center'}}>
+            <View style = {styles.container}>
                 <FlatList
                     data = {this.state.allTransactions}
                     renderItem = {
                         ({item})=> {
-                            console.log(item.bookID, item.studentID, item.transactionType, item.data);
-                            <View style = {{borderBottomWidth:2}}>
+                            console.log(item.bookID, item.studentID, item.transactionType, item.data.toDate());
+                            return(<View style = {{borderBottomWidth:2}}>
                                 <Text>{'bookID: '+item.bookID}</Text>
                                 <Text>{'studentID: '+item.studentID}</Text>
                                 <Text>{'transactionType: '+item.transactionType}</Text>
                                 <Text>{'date: '+item.data.toDate()}</Text>
-                            </View>
+                            </View>)
                         }
                     }
-                    keyExtractor = {
-                        (item,index)=> {
-                            index.toString();
-                        }
-                    }
-                    onEndReached = {this.fetchMoreTransactions}
+                      keyExtractor= {(item, index)=> index.toString()}
+                      onEndReached ={this.fetchMoreTransactions}
+                      onEndReachedThreshold={0.7}
                 ></FlatList>
             </View>
         )
     }
 }
+const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      marginTop: 20
+    },
+    searchBar:{
+      flexDirection:'row',
+      height:40,
+      width:'auto',
+      borderWidth:0.5,
+      alignItems:'center',
+      backgroundColor:'grey',
+  
+    },
+    bar:{
+      borderWidth:2,
+      height:30,
+      width:300,
+      paddingLeft:10,
+    },
+    searchButton:{
+      borderWidth:1,
+      height:30,
+      width:50,
+      alignItems:'center',
+      justifyContent:'center',
+      backgroundColor:'green'
+    }
+  })

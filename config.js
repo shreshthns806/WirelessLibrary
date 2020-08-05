@@ -1,13 +1,14 @@
 import * as firebase from 'firebase';
 require('@firebase/firestore')
 var firebaseConfig = {
-    apiKey: "AIzaSyBMOrR9eyDnI7KYuJaH9nmMTFaO8kQL08c",
-    authDomain: "wireleibrary-6fe6a.firebaseapp.com",
-    databaseURL: "https://wireleibrary-6fe6a.firebaseio.com",
-    projectId: "wireleibrary-6fe6a",
-    storageBucket: "wireleibrary-6fe6a.appspot.com",
-    messagingSenderId: "986308189647",
-    appId: "1:986308189647:web:5081d7dae1e954884e06ba"
+  apiKey: "AIzaSyD-weFxyNnKhznOqrY836qh4EtszTwCKFI",
+  apiKey: "AIzaSyDfTJ9PVcwzIwZxyokxpIFkHksce6_-_i4",
+  authDomain: "kwitter-9bad9.firebaseapp.com",
+  databaseURL: "https://kwitter-9bad9.firebaseio.com",
+  projectId: "kwitter-9bad9",
+  storageBucket: "kwitter-9bad9.appspot.com",
+  messagingSenderId: "414971373697",
+  appId: "1:414971373697:web:8b8acd99e615d2a2e54580"
   };
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);

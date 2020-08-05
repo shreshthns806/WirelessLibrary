@@ -81,7 +81,7 @@ export default class TransactionScreen extends React.Component {
     }
 
     sEligibilityForBookReturn = async ()=> {
-        const transactionRef = await db.collection('transaction').where('bookID','==',this.state.scanBookID).limit(1).get();
+        const transactionRef = await db.collection('transactions').where('bookID','==',this.state.scanBookID).limit(1).get();
         var isStudentEligible = '';
         transactionRef.docs.map(
             (item)=> {
